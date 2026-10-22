@@ -1,0 +1,184 @@
+name: Windows installation release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release.yml'
+      - 'packaging/**'
+      - 'server*.mjs'
+      - 'public/**'
+      - 'package.json'
+      - 'config.example.json'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.md'
+      - 'docs/install.md'
+      - 'docs/releases/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installation-release
+  cancel-in-progress: false
+
+jobs:
+  windows-release:
+    if: github.repository == 'edowadolui-lab/strata-dual-device-monitor' && github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      # Pins are verified against the official actions/* release tags.
+      - name: Check out the exact source commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the pinned packaged runtime
+        id: runtime
+        run: |
+          $runtime = Get-Content packaging/runtime.json -Raw | ConvertFrom-Json
+          if ($runtime.version -notmatch '^\d+\.\d+\.\d+$' -or $runtime.platform -ne 'win-x64') {
+            throw 'Expected a pinned Windows x64 Node version in packaging/runtime.json.'
+          }
+          "version=$($runtime.version)" >> $env:GITHUB_OUTPUT
+
+      - name: Set up the same Node version shipped in the installation ZIP
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ steps.runtime.outputs.version }}
+          architecture: x64
+          package-manager-cache: false
+
+      - name: Test the collector and HTTP boundary
+        run: npm test
+
+      - name: Check whether this version is already published
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'package.json must contain a numeric major.minor.patch release version.'
+          }
+          $tag = "v$version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $releaseUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          $response = Invoke-WebRequest -Uri $releaseUrl -Headers $headers -SkipHttpErrorCheck
+          if ($response.StatusCode -eq 200) {
+            $existing = $response.Content | ConvertFrom-Json
+            if ($existing.draft) {
+              throw "An unpublished $tag draft already exists. Inspect its assets before retrying; this workflow never overwrites a release."
+            }
+            "publish=false" >> $env:GITHUB_OUTPUT
+            "### $tag is already published; assets were left unchanged." >> $env:GITHUB_STEP_SUMMARY
+          } elseif ($response.StatusCode -eq 404) {
+            # An existing un-released tag must not silently select another commit.
+            $tagUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag"
+            $tagResponse = Invoke-WebRequest -Uri $tagUrl -Headers $headers -SkipHttpErrorCheck
+            if ($tagResponse.StatusCode -ne 404) {
+              throw "The tag check returned HTTP $($tagResponse.StatusCode). An existing tag must be reviewed before publishing $tag."
+            }
+            "publish=true" >> $env:GITHUB_OUTPUT
+          } else {
+            throw "Cannot check existing releases: HTTP $($response.StatusCode)."
+          }
+
+      - name: Build the Windows x64 installation ZIP
+        if: steps.release.outputs.publish == 'true'
+        run: |
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging/build-release.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Packaging failed with exit code $LASTEXITCODE." }
+
+      - name: Smoke test install, start, health, stop and uninstall on clean Windows
+        if: steps.release.outputs.publish == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          $archive = "dist/strata-dual-device-monitor-v$env:RELEASE_VERSION-windows-x64.zip"
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging/test-install.ps1 -ArchivePath $archive -NoShortcuts
+          if ($LASTEXITCODE -ne 0) { throw "Installation smoke test failed with exit code $LASTEXITCODE." }
+
+      - name: Validate artifact checksums and source receipt
+        if: steps.release.outputs.publish == 'true'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifest = Get-Content dist/release-manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.sourceCommit -ne $env:GITHUB_SHA) {
+            throw 'Release manifest does not identify the checked-out source commit.'
+          }
+          $lines = @(Get-Content dist/SHA256SUMS.txt | Where-Object { $_.Trim() })
+          if ($lines.Count -eq 0) { throw 'SHA256SUMS.txt is empty.' }
+          foreach ($line in $lines) {
+            if ($line -notmatch '^([a-fA-F0-9]{64})  ([A-Za-z0-9._-]+)$') {
+              throw 'Invalid checksum entry.'
+            }
+            $expected = $Matches[1]
+            $file = Join-Path dist $Matches[2]
+            if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $expected) {
+              throw "Checksum mismatch: $file."
+            }
+          }
+
+      - name: Preserve the tested installation artifacts
+        if: steps.release.outputs.publish == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-x64-${{ steps.release.outputs.tag }}
+          path: |
+            dist/strata-dual-device-monitor-v${{ steps.release.outputs.version }}-windows-x64.zip
+            dist/SHA256SUMS.txt
+            dist/release-manifest.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+      - name: Publish the tested Windows preview release
+        if: steps.release.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:RELEASE_TAG
+          $archive = "dist/strata-dual-device-monitor-v$env:RELEASE_VERSION-windows-x64.zip"
+          $notesPath = "docs/releases/$tag.md"
+          if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+            throw "Missing reviewed release notes: $notesPath."
+          }
+          $notes = Get-Content -LiteralPath $notesPath -Raw
+          $commitUrl = "https://github.com/$env:GITHUB_REPOSITORY/commit/$env:GITHUB_SHA"
+          $notes += "`n`nBuilt and installation-tested on Windows 2022 from source commit [$env:GITHUB_SHA]($commitUrl).`n"
+          $notesFile = Join-Path $env:RUNNER_TEMP 'strata-monitor-release-notes.md'
+          [IO.File]::WriteAllText($notesFile, $notes, [Text.UTF8Encoding]::new($false))
+          $assets = @($archive, 'dist/SHA256SUMS.txt', 'dist/release-manifest.json')
+          # Leave an upload failure private. Published releases are never replaced.
+          & gh release create $tag @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Strata dual-device monitor $tag - Windows preview" --notes-file $notesFile --draft --prerelease --latest=false
+          if ($LASTEXITCODE -ne 0) { throw 'Release draft creation or asset upload failed.' }
+          $json = & gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify the uploaded release assets.' }
+          $uploaded = ($json -join "`n") | ConvertFrom-Json
+          foreach ($asset in $assets) {
+            $local = Get-Item -LiteralPath $asset
+            $match = @($uploaded.assets | Where-Object { $_.name -eq $local.Name -and $_.size -eq $local.Length -and $_.state -eq 'uploaded' })
+            if ($match.Count -ne 1) { throw "Uploaded asset verification failed: $($local.Name)." }
+          }
+          & gh release edit $tag --repo $env:GITHUB_REPOSITORY --draft=false --prerelease --latest=false
+          if ($LASTEXITCODE -ne 0) { throw 'Publishing the verified release failed.' }
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$tag"
+          "### Published [$tag Windows preview]($url)" >> $env:GITHUB_STEP_SUMMARY
