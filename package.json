@@ -1,0 +1,13 @@
+{
+  "name": "strata-dual-device-monitor",
+  "version": "0.1.0",
+  "description": "Read-only local dashboard for a primary Strata engine and a remote transformer stage",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test server.test.mjs"
+  }
+}

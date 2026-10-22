@@ -1,0 +1,28 @@
+{
+  "primary": {
+    "metricsURL": "http://127.0.0.1:8081/metrics?workers=1",
+    "displayAddress": "Primary PC"
+  },
+  "remote": {
+    "agentURL": "http://192.168.50.2:7840/info",
+    "stagePeer": "192.168.50.2:7841",
+    "name": "Remote worker",
+    "cpuName": "Set your remote CPU name",
+    "gpuName": "Set your remote GPU name"
+  },
+  "transportLabel": "TCP over USB4",
+  "localLayerCount": 44,
+  "contextMax": 131072,
+  "mtp": {
+    "enabled": false,
+    "runtimeFolder": null,
+    "draftModelFile": null
+  },
+  "vision": {
+    "enabled": false,
+    "gpu": false,
+    "threads": 8,
+    "max_tokens": 300,
+    "mmprojFile": null
+  }
+}

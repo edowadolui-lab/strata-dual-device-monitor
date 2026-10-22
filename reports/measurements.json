@@ -1,0 +1,506 @@
+{
+  "schema_version": 1,
+  "report_kind": "Community compatibility and smoke-test report; not a complete standard Strata benchmark",
+  "measured_local_date": "2026-10-21",
+  "runs_per_test": 1,
+  "sanitization": "Only numeric results, generic test names and public artifact identifiers are included. Model responses, private prompts, credentials, user paths, hostnames, private addresses and session identifiers were removed.",
+  "hardware": {
+    "primary": {
+      "cpu": "Intel Core Ultra 9 285H",
+      "cpu_cores": 16,
+      "cpu_logical_processors": 16,
+      "gpu": "NVIDIA GeForce RTX 5070",
+      "dedicated_vram_marketed_gb": 12,
+      "system_ram_marketed_gb": 64,
+      "os": "Windows 11 Pro",
+      "os_version": "10.0.26200",
+      "nvidia_windows_driver_version": "32.0.16.2101"
+    },
+    "worker": {
+      "device": "ONEXPLAYER APEX",
+      "cpu": "AMD Ryzen AI Max+ 395",
+      "gpu": "AMD Radeon 8060S",
+      "hip_target": "gfx1151",
+      "physical_unified_memory_marketed_gb": 48,
+      "configured_gpu_allocation_marketed_gb": 24,
+      "configured_os_ram_marketed_gb": 24,
+      "os": "Windows",
+      "os_build": null,
+      "gpu_driver_version": null
+    },
+    "link": {
+      "transport": "TCP over direct USB4 networking",
+      "link_bandwidth_measured": false,
+      "ethernet_aggregated": false
+    }
+  },
+  "software": {
+    "baseline": {
+      "repository": "Niko1221/Strata",
+      "desktop_version": "0.2.2",
+      "engine_version": "0.1.47",
+      "engine_commit": "76f90e58436d",
+      "cuda": "13.0"
+    },
+    "cluster": {
+      "repository": "lask3802/Strata",
+      "release": "v0.1.45.3-link.1",
+      "commit": "3015d458b52e7787bc10b2c38717973b321914a9",
+      "engine_version": "0.1.45.3",
+      "primary_backend": "CUDA",
+      "worker_backend": "HIP",
+      "cuda": "13.0",
+      "worker_rocm": "10.2.0a20260930",
+      "worker_compiler": "Visual Studio 2022 BuildTools 14.44",
+      "worker_hip_device_list_exit": 0,
+      "worker_hip_selftest_exit": 0,
+      "worker_exe_sha256": "0709eae77ecffaeef9c5365008c2179ad8bd8573b761180f81f66d5cddbb30e2",
+      "worker_package_sha256": "2e9ff83fd2439b3ea7d74686ab475f5882e577ea732942ac8a5884438f041f63"
+    }
+  },
+  "model": {
+    "repository": "SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF",
+    "revision": "eec4e10a2c29b440a2ae85591fa11569ce752963",
+    "quantization": "IQ3_XXS",
+    "artifacts": [
+      {
+        "name": "IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-IQ3_XXS-00001-of-00002.gguf",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-IQ3_XXS-00001-of-00002.gguf",
+        "sha256": "03b11926b41a3d7f7a008882b1bc7a6330a3c9c43d3cad4598d31dc73042fdc5",
+        "bytes": 47342144896
+      },
+      {
+        "name": "IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-IQ3_XXS-00002-of-00002.gguf",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/IQ3_XXS/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-IQ3_XXS-00002-of-00002.gguf",
+        "sha256": "316b46f3a2dbd68c900f43136ab9449f9dcc3725dfd8c794847c204bc161e113",
+        "bytes": 28800138432
+      },
+      {
+        "name": "mtp-q2_0.gguf",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/mtp-q2_0.gguf",
+        "sha256": "a22206a4d74eafbf31063a84610292535fb3b49af9a339963817fd04aed81e4d",
+        "bytes": 889017216
+      },
+      {
+        "name": "mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/mmproj-Qwen3.8-Flash-Next-BF16.gguf",
+        "sha256": "2e788f8c511d8093c7b43cb87b2fd7e14228340318057f8fb20c86df2efe2355",
+        "bytes": 907542944
+      },
+      {
+        "name": "strata/rt/dense.bin",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/strata/rt/dense.bin",
+        "sha256": "c724dc0b0822ada5d2977bf5bde821605feabaa64ea2e0045b67ca656329070a",
+        "bytes": 116099072
+      },
+      {
+        "name": "strata/rt/draft_vocab.bin",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/strata/rt/draft_vocab.bin",
+        "sha256": "b1e1d3a7a9e4bf862dcd5923ce661fb59bbd07907e594df5cf86a62ac235cb91",
+        "bytes": 425196
+      },
+      {
+        "name": "strata/rt/experts.bin",
+        "url": "https://huggingface.co/SC117/Qwen3.8-Flash-Next-GSQ-RCO-abliterated-GGUF/resolve/eec4e10a2c29b440a2ae85591fa11569ce752963/strata/rt/experts.bin",
+        "sha256": "09398406be61f1f54c93861f449e48b8df0bfccbc9ec9b2b7636775a6ea9244f",
+        "bytes": 707788800
+      }
+    ]
+  },
+  "topology": {
+    "primary_layer_range": [
+      0,
+      43
+    ],
+    "worker_layer_range": [
+      44,
+      47
+    ],
+    "mtp_location": "primary",
+    "output_head_location": "primary",
+    "sampling_location": "primary",
+    "vision_encoder_location": "primary CPU",
+    "shared_memory_pool": false,
+    "pipeline_windows": 0,
+    "worker_expert_cache_slots": 2048,
+    "worker_cache_covers_all_assigned_layer_experts": true
+  },
+  "cohorts": [
+    {
+      "id": "short_prompts_32k",
+      "protocol": "Same three neutral prompts, temperature 0, thinking disabled, max output 256; one measured run per prompt after a two-token warmup. Two different engine versions: this is not an isolated split-only A/B.",
+      "context_tokens": 32768,
+      "baseline_engine": "0.1.47",
+      "cluster_engine": "0.1.45.3-link.1",
+      "baseline_source": "baseline-pre-cluster.json",
+      "cluster_source": "cluster-k44-validation.json",
+      "baseline": [
+        {
+          "name": "warmup",
+          "wall_seconds": 0.688,
+          "completion_tokens": 2,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 18,
+            "prompt_ms": 516.4,
+            "prompt_per_token_ms": 28.689,
+            "prompt_per_second": 34.9,
+            "predicted_n": 2,
+            "predicted_ms": 103.9,
+            "predicted_per_token_ms": 51.95,
+            "predicted_per_second": 19.2,
+            "draft_n": 3,
+            "draft_n_accepted": 3
+          },
+          "ok": true
+        },
+        {
+          "name": "code",
+          "wall_seconds": 7.172,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 45,
+            "prompt_ms": 972.0,
+            "prompt_per_token_ms": 21.6,
+            "prompt_per_second": 46.3,
+            "predicted_n": 256,
+            "predicted_ms": 6182.6,
+            "predicted_per_token_ms": 24.151,
+            "predicted_per_second": 41.4,
+            "draft_n": 229,
+            "draft_n_accepted": 168
+          },
+          "ok": true
+        },
+        {
+          "name": "explanation",
+          "wall_seconds": 7.281,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 49,
+            "prompt_ms": 923.8,
+            "prompt_per_token_ms": 18.853,
+            "prompt_per_second": 53.0,
+            "predicted_n": 256,
+            "predicted_ms": 6347.0,
+            "predicted_per_token_ms": 24.793,
+            "predicted_per_second": 40.3,
+            "draft_n": 261,
+            "draft_n_accepted": 119
+          },
+          "ok": true
+        },
+        {
+          "name": "prose",
+          "wall_seconds": 6.672,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 45,
+            "prompt_ms": 984.3,
+            "prompt_per_token_ms": 21.873,
+            "prompt_per_second": 45.7,
+            "predicted_n": 256,
+            "predicted_ms": 5671.9,
+            "predicted_per_token_ms": 22.156,
+            "predicted_per_second": 45.1,
+            "draft_n": 225,
+            "draft_n_accepted": 114
+          },
+          "ok": true
+        }
+      ],
+      "cluster": [
+        {
+          "name": "warmup",
+          "wall_seconds": 0.625,
+          "completion_tokens": 2,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 18,
+            "prompt_ms": 461.7,
+            "prompt_per_token_ms": 25.65,
+            "prompt_per_second": 39.0,
+            "predicted_n": 2,
+            "predicted_ms": 144.0,
+            "predicted_per_token_ms": 72.0,
+            "predicted_per_second": 13.9,
+            "draft_n": 3,
+            "draft_n_accepted": 3
+          },
+          "ok": true
+        },
+        {
+          "name": "text",
+          "wall_seconds": 0.61,
+          "completion_tokens": 4,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 27,
+            "prompt_ms": 429.6,
+            "prompt_per_token_ms": 15.911,
+            "prompt_per_second": 62.8,
+            "predicted_n": 4,
+            "predicted_ms": 166.2,
+            "predicted_per_token_ms": 41.55,
+            "predicted_per_second": 24.1,
+            "draft_n": 3,
+            "draft_n_accepted": 3
+          },
+          "ok": true
+        },
+        {
+          "name": "tool",
+          "wall_seconds": 2.89,
+          "completion_tokens": 20,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 284,
+            "prompt_ms": 2431.9,
+            "prompt_per_token_ms": 8.563,
+            "prompt_per_second": 116.8,
+            "predicted_n": 20,
+            "predicted_ms": 459.7,
+            "predicted_per_token_ms": 22.985,
+            "predicted_per_second": 43.5,
+            "draft_n": 16,
+            "draft_n_accepted": 13
+          },
+          "ok": true
+        },
+        {
+          "name": "vision",
+          "wall_seconds": 5.328,
+          "completion_tokens": 8,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 286,
+            "prompt_ms": 1629.1,
+            "prompt_per_token_ms": 5.696,
+            "prompt_per_second": 175.6,
+            "predicted_n": 8,
+            "predicted_ms": 244.2,
+            "predicted_per_token_ms": 30.525,
+            "predicted_per_second": 32.8,
+            "draft_n": 6,
+            "draft_n_accepted": 6
+          },
+          "ok": true
+        },
+        {
+          "name": "code",
+          "wall_seconds": 4.922,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 45,
+            "prompt_ms": 503.2,
+            "prompt_per_token_ms": 11.182,
+            "prompt_per_second": 89.4,
+            "predicted_n": 256,
+            "predicted_ms": 4394.5,
+            "predicted_per_token_ms": 17.166,
+            "predicted_per_second": 58.3,
+            "draft_n": 227,
+            "draft_n_accepted": 169
+          },
+          "ok": true
+        },
+        {
+          "name": "explanation",
+          "wall_seconds": 6.422,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 49,
+            "prompt_ms": 1015.8,
+            "prompt_per_token_ms": 20.731,
+            "prompt_per_second": 48.2,
+            "predicted_n": 256,
+            "predicted_ms": 5390.8,
+            "predicted_per_token_ms": 21.058,
+            "predicted_per_second": 47.5,
+            "draft_n": 232,
+            "draft_n_accepted": 140
+          },
+          "ok": true
+        },
+        {
+          "name": "prose",
+          "wall_seconds": 5.485,
+          "completion_tokens": 256,
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 45,
+            "prompt_ms": 633.6,
+            "prompt_per_token_ms": 14.08,
+            "prompt_per_second": 71.0,
+            "predicted_n": 256,
+            "predicted_ms": 4839.4,
+            "predicted_per_token_ms": 18.904,
+            "predicted_per_second": 52.9,
+            "draft_n": 219,
+            "draft_n_accepted": 125
+          },
+          "ok": true
+        }
+      ]
+    },
+    {
+      "id": "short_decode_with_128k_allocation",
+      "protocol": "Two neutral code requests at temperature 0 with thinking disabled. Different output lengths and prompt histories from the 32K cohort. Not a full 128K prompt test. Exact prompt text was not retained in the numeric source record.",
+      "source": "stable-decode-128k.json",
+      "context_tokens": 131072,
+      "rows": [
+        {
+          "index": 1,
+          "totalSeconds": 8.7678574,
+          "promptTokens": 76,
+          "promptRead": 76,
+          "reused": 0,
+          "outputTokens": 512,
+          "decodeTps": 66.1,
+          "expertHitRate": 0.61,
+          "pcieShare": 0.043,
+          "finish": "length",
+          "mtpOffered": 445,
+          "mtpAccepted": 358,
+          "gpuFreeMiB": 846,
+          "expertSlots": 2300,
+          "expertCacheMiB": 3802,
+          "ramUsedGiB": 57.17845916748047
+        },
+        {
+          "index": 2,
+          "totalSeconds": 8.482658899999999,
+          "promptTokens": 625,
+          "promptRead": 556,
+          "reused": 69,
+          "outputTokens": 476,
+          "decodeTps": 74.9,
+          "expertHitRate": 0.673,
+          "pcieShare": 0.037,
+          "finish": "stop",
+          "mtpOffered": 393,
+          "mtpAccepted": 339,
+          "gpuFreeMiB": 846,
+          "expertSlots": 2300,
+          "expertCacheMiB": 3802,
+          "ramUsedGiB": 57.284515380859375
+        }
+      ]
+    },
+    {
+      "id": "two_turn_prompt_cache_with_128k_allocation",
+      "source": "context-cache-128k.json",
+      "context_evidence": {
+        "serverContext": 131072,
+        "nativeContext": 131072,
+        "engineContext": 131072,
+        "workerContext": 131072,
+        "remoteStageConnected": true,
+        "localLayers": [
+          0,
+          43
+        ],
+        "remoteLayers": [
+          44,
+          47
+        ],
+        "allocationAndHandshakeVerified": true,
+        "full128kPromptPrefillTested": false,
+        "note": "This validates context allocation/reporting and the worker handshake. It does not prefill a full 128K prompt."
+      },
+      "fixture": {
+        "tokenCount": 2059,
+        "referenceLines": 100,
+        "maxOutputTokens": 64,
+        "thinkingEnabled": false,
+        "referenceSHA256": "dfb10dc9c3b266b8b1a8af11d67d89744e2bc99d36031f5b8c4c03213090d768"
+      },
+      "rows": [
+        {
+          "index": 1,
+          "wall_seconds": 6.907347,
+          "completion_tokens": 6,
+          "sentinel_matched": true,
+          "finish_reason": "stop",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 2059,
+            "prompt_ms": 6756.5,
+            "prompt_per_second": 304.7,
+            "predicted_n": 6,
+            "predicted_ms": 142.6,
+            "predicted_per_second": 42.1,
+            "draft_n": 6,
+            "draft_n_accepted": 6
+          },
+          "request_metrics": {
+            "prompt_total": 2059,
+            "prompt_read": 2059,
+            "reused": 0,
+            "output_tokens": 6,
+            "first_engine_token_s": 6.777,
+            "prompt_ms": 6756.5,
+            "decode_ms": 142.6,
+            "decode_tok_s": 42.1,
+            "drafts_offered": 6,
+            "drafts_accepted": 6,
+            "hit_rate": 0.468,
+            "pcie_share": 0.056,
+            "finish": "stop"
+          }
+        },
+        {
+          "index": 2,
+          "wall_seconds": 0.7279291000000003,
+          "completion_tokens": 6,
+          "sentinel_matched": true,
+          "finish_reason": "stop",
+          "timings": {
+            "cache_n": 2052,
+            "prompt_n": 44,
+            "prompt_ms": 551.6,
+            "prompt_per_second": 79.8,
+            "predicted_n": 6,
+            "predicted_ms": 168,
+            "predicted_per_second": 35.7,
+            "draft_n": 8,
+            "draft_n_accepted": 5
+          },
+          "request_metrics": {
+            "prompt_total": 2096,
+            "prompt_read": 44,
+            "reused": 2052,
+            "output_tokens": 6,
+            "first_engine_token_s": 0.573,
+            "prompt_ms": 551.6,
+            "decode_ms": 168,
+            "decode_tok_s": 35.7,
+            "drafts_offered": 8,
+            "drafts_accepted": 5,
+            "hit_rate": 0.436,
+            "pcie_share": 0.068,
+            "finish": "stop"
+          }
+        }
+      ],
+      "second_request_reuse_fraction": 0.9790076335877863
+    }
+  ],
+  "limitations": [
+    "One run per test; no variance estimate or broad workload benchmark.",
+    "Baseline and cluster engine versions differ, so timing differences cannot be attributed to the remote split alone.",
+    "128K allocation, reporting and handshake passed; full 128K prefill/recall was not tested.",
+    "Primary expert-cache hit rate above 90 percent was not achieved. Prompt reuse is a different metric.",
+    "No aggregate NVIDIA+AMD expert hit rate is available from the stage protocol.",
+    "No direct USB4 bandwidth, wire latency or per-stage work timing was collected for these runs.",
+    "AMD GPU utilization/temperature/VRAM-use sensors are unavailable through the current monitor agent.",
+    "Primary engine logs contain low-free-VRAM warnings. Short successful tests do not prove long-session stability.",
+    "Historical failed cache fixture modified its prefix between turns; it is excluded from success measurements and does not prove an engine cache failure.",
+    "Worker OS build and GPU driver version were not captured in the publication evidence."
+  ]
+}
