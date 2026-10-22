@@ -267,7 +267,8 @@ export function createAppServer({ monitor = createMonitor(), publicDir = join(HE
       }
       if (url.pathname === '/api/health') {
         response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        response.end(JSON.stringify({ service: 'strata-dual-device-monitor', version: 1, readOnly: true })); return;
+        response.end(JSON.stringify({ service: 'strata-dual-device-monitor', version: 1, appVersion: '0.1.0',
+          copyright: 'Copyright (c) 2026 edowadolui-lab', readOnly: true })); return;
       }
       if (url.pathname.startsWith('/api/')) { response.writeHead(404); response.end('Not found'); return; }
       const decoded = decodeURIComponent(url.pathname);

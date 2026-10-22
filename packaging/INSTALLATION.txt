@@ -1,0 +1,33 @@
+Strata Dual Device Monitor for Windows x64
+Copyright (c) 2026 edowadolui-lab. MIT license.
+
+1. Extract the entire ZIP to a folder, then double-click Install.cmd.
+2. Use the Configure shortcut in Start > Strata Dual Device Monitor.
+3. Enter your existing primary metrics endpoint, remote agent endpoint and credentials.
+4. Open Strata Dual Device Monitor using the desktop or Start-menu shortcut.
+
+Installs only for the current Windows user. Administrator access and a separate
+Node.js installation are not required. Official Node.js 22 is bundled; its license
+and pinned source/hash are in runtime/. Windows may show an unsigned-download
+warning; inspect the source and SHA256SUMS.txt before running.
+
+This program is an independent, read-only monitor. It does not install Strata,
+StrataLink, the remote agent, GPU drivers, model weights, or a coding harness.
+Those must already be configured and running. No model is started, stopped,
+reconfigured, or controlled by these installer or launcher scripts.
+
+Application: %LOCALAPPDATA%\Programs\StrataDualDeviceMonitor
+User configuration/logs: %LOCALAPPDATA%\StrataDualDeviceMonitor
+Dashboard: http://127.0.0.1:47832
+
+Credentials are stored locally in config.json in the user configuration folder.
+Do not share that file. Configuration and logs stay on your computer.
+An existing monitor already occupying the port must be stopped with its own
+launcher first. Stop Monitor stops only the installed monitor's verified process.
+
+Uninstall from Start > Strata Dual Device Monitor > Uninstall. Configuration is
+preserved by default. To delete it too, run scripts\uninstall.ps1 -RemoveUserData
+from the installed application folder. Neither option removes Strata or models.
+
+To update, close this monitor with Stop Monitor and run the new Install.cmd.
+Existing local configuration is preserved. Windows 10/11 x64 is required.

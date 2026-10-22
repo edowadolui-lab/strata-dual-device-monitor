@@ -4,6 +4,8 @@ config.*.local.json
 .env.*
 !.env.example
 node_modules/
+dist/
+.build-cache/
 *.log
 logs/
 window-profile/

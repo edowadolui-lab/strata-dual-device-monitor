@@ -207,7 +207,8 @@ test('HTTP server exposes only cached GET status and contained static files', as
   });
   assert.equal(rebindingStatus, 403);
   const health = await fetch(`${origin}/api/health`);
-  assert.deepEqual(await health.json(), { service: 'strata-dual-device-monitor', version: 1, readOnly: true });
+  assert.deepEqual(await health.json(), { service: 'strata-dual-device-monitor', version: 1,
+    appVersion: '0.1.0', copyright: 'Copyright (c) 2026 edowadolui-lab', readOnly: true });
   for (const path of ['/private.txt', '/%2e%2e%2fprivate.txt', '/%2e%2e%5cprivate.txt', '/api/stop']) {
     assert.equal((await fetch(`${origin}${path}`)).status, 404);
   }

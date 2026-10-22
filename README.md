@@ -1,5 +1,7 @@
 # Strata dual-device monitor
 
+Copyright (c) 2026 **edowadolui-lab**. Original monitor program released under the [MIT license](LICENSE).
+
 An independent community dashboard for an existing primary Strata engine and one remote transformer stage. It observes model activity, the layer split, device memory, whole-model throughput and source freshness. The collector runs locally and uses Node.js built-ins; no package installation is required.
 
 This repository does not start or configure distributed inference. Set up the experimental [StrataLink fork](https://github.com/lask3802/Strata) first. The engine and remote-stage implementation are separate work by their respective contributors. See [Strata](https://github.com/Niko1221/Strata) and the fork's [remote-stage documentation](https://github.com/lask3802/Strata/blob/main/docs/REMOTE_STAGE.md).
@@ -28,7 +30,13 @@ flowchart LR
 
 The remote layer assignment is read from engine metrics. Each engine owns its own memory, expert cache and session state. Layers execute in stages; the dashboard does not imply two independent token streams or one pooled RAM/VRAM allocation. TCP can travel over a USB4 network adapter or another private network.
 
-## Run locally
+## Windows installation
+
+Download the Windows x64 installer ZIP from [Releases](https://github.com/edowadolui-lab/strata-dual-device-monitor/releases), extract it, and run `Install.cmd`. The package includes its own verified Node.js runtime and installs for your Windows account without administrator access. Use **Configure Strata Dual Device Monitor** to enter your existing engine and telemetry-agent connection settings, then use the Start shortcut.
+
+Read the [installation guide](docs/install.md) for prerequisites, configuration, upgrades and removal. This package installs the monitor. StrataLink, model files and a compatible remote telemetry agent are separate prerequisites.
+
+## Run from source
 
 Requirements: Node.js 22 or newer, a running StrataLink primary API, and a compatible remote telemetry agent. The dashboard was developed for Windows CUDA + HIP, but its collector itself uses portable Node APIs. Other systems have not been validated.
 
