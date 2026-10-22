@@ -1,0 +1,143 @@
+name: Recover verified v0.1.0 preview draft
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/recover-v0.1.0.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installation-release
+  cancel-in-progress: false
+
+jobs:
+  recover-verified-draft:
+    if: github.repository == 'edowadolui-lab/strata-dual-device-monitor' && github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      EXPECTED_SOURCE: '32e094075e7665bc44e43cfe5b815e9e66d47a0b'
+      EXPECTED_RELEASE_ID: '420316987'
+      EXPECTED_ZIP_SHA256: 'afc85f79752c0639e97e5a7265ca7feddebc0764a16458a6ed3cecf0487d0dac'
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out the exact source that produced the draft assets
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: '32e094075e7665bc44e43cfe5b815e9e66d47a0b'
+          persist-credentials: false
+
+      - name: Verify the fixed draft and download its existing assets
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $base = "https://api.github.com/repos/$env:GITHUB_REPOSITORY"
+          $release = Invoke-RestMethod -Uri "$base/releases/$env:EXPECTED_RELEASE_ID" -Headers $headers
+          if ($release.id.ToString() -ne $env:EXPECTED_RELEASE_ID -or $release.tag_name -ne 'v0.1.0' -or $release.target_commitish -ne $env:EXPECTED_SOURCE) {
+            throw 'The fixed release ID, tag or tested source commit does not match.'
+          }
+          if (-not $release.draft) {
+            "recover=false" >> $env:GITHUB_OUTPUT
+            '### v0.1.0 is already published. No release or asset was changed.' >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+          $expected = @(
+            @{ id = 664700075; name = 'strata-dual-device-monitor-v0.1.0-windows-x64.zip'; size = 33270847; sha256 = $env:EXPECTED_ZIP_SHA256 },
+            @{ id = 664700080; name = 'SHA256SUMS.txt'; size = 116; sha256 = '05c8c593e1d04c3c3d564848915c927be049b6dcff28dc9144a39a32dbf8881f' },
+            @{ id = 664700079; name = 'release-manifest.json'; size = 5025; sha256 = '04426536a708b2871c5805868054d6c9fea5ea8c3121bf1848a35058a15f4f59' }
+          )
+          if (@($release.assets).Count -ne $expected.Count) { throw 'Unexpected draft asset count.' }
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          $downloadHeaders = $headers.Clone()
+          $downloadHeaders.Accept = 'application/octet-stream'
+          foreach ($item in $expected) {
+            $match = @($release.assets | Where-Object {
+              $_.id -eq $item.id -and $_.name -eq $item.name -and $_.size -eq $item.size -and
+              $_.digest -eq "sha256:$($item.sha256)" -and $_.state -eq 'uploaded'
+            })
+            if ($match.Count -ne 1) { throw "Draft asset metadata changed: $($item.name)." }
+            $file = Join-Path dist $item.name
+            # OutFile preserves binary ZIP bytes across the signed download redirect.
+            Invoke-WebRequest -Uri "$base/releases/assets/$($item.id)" -Headers $downloadHeaders -OutFile $file -TimeoutSec 180
+            if ((Get-Item -LiteralPath $file).Length -ne $item.size -or (Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $item.sha256) {
+              throw "Downloaded asset checksum or size mismatch: $($item.name)."
+            }
+          }
+          $manifest = Get-Content dist/release-manifest.json -Raw | ConvertFrom-Json
+          if ($manifest.sourceCommit -ne $env:EXPECTED_SOURCE -or $manifest.version -ne '0.1.0' -or $manifest.runtime.version -ne '22.23.4') {
+            throw 'Downloaded source receipt, application version or runtime version changed.'
+          }
+          $checksum = (Get-Content dist/SHA256SUMS.txt -Raw).Trim()
+          if ($checksum -ne "$env:EXPECTED_ZIP_SHA256  strata-dual-device-monitor-v0.1.0-windows-x64.zip") {
+            throw 'Published checksum file does not identify the verified installation ZIP.'
+          }
+          "recover=true" >> $env:GITHUB_OUTPUT
+
+      - name: Set up the verified packaged runtime version
+        if: steps.draft.outputs.recover == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22.23.4'
+          architecture: x64
+          package-manager-cache: false
+
+      - name: Retest the pinned source
+        if: steps.draft.outputs.recover == 'true'
+        run: npm test
+
+      - name: Retest the exact existing ZIP on isolated Windows PowerShell 5.1
+        if: steps.draft.outputs.recover == 'true'
+        run: |
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging/test-install.ps1 -ArchivePath dist/strata-dual-device-monitor-v0.1.0-windows-x64.zip -NoShortcuts
+          if ($LASTEXITCODE -ne 0) { throw "Installation smoke test failed with exit code $LASTEXITCODE." }
+
+      - name: Publish only the verified existing draft by release ID
+        if: steps.draft.outputs.recover == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $releaseUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$env:EXPECTED_RELEASE_ID"
+          $release = Invoke-RestMethod -Uri $releaseUrl -Headers $headers
+          if ($release.id.ToString() -ne $env:EXPECTED_RELEASE_ID -or $release.tag_name -ne 'v0.1.0' -or $release.target_commitish -ne $env:EXPECTED_SOURCE) {
+            throw 'The release identity changed while tests ran.'
+          }
+          $expected = @(
+            @{ id = 664700075; name = 'strata-dual-device-monitor-v0.1.0-windows-x64.zip'; size = 33270847; sha256 = $env:EXPECTED_ZIP_SHA256 },
+            @{ id = 664700080; name = 'SHA256SUMS.txt'; size = 116; sha256 = '05c8c593e1d04c3c3d564848915c927be049b6dcff28dc9144a39a32dbf8881f' },
+            @{ id = 664700079; name = 'release-manifest.json'; size = 5025; sha256 = '04426536a708b2871c5805868054d6c9fea5ea8c3121bf1848a35058a15f4f59' }
+          )
+          if (@($release.assets).Count -ne $expected.Count) { throw 'Draft asset count changed while tests ran.' }
+          foreach ($item in $expected) {
+            $match = @($release.assets | Where-Object {
+              $_.id -eq $item.id -and $_.name -eq $item.name -and $_.size -eq $item.size -and
+              $_.digest -eq "sha256:$($item.sha256)" -and $_.state -eq 'uploaded'
+            })
+            if ($match.Count -ne 1) { throw "Draft asset changed while tests ran: $($item.name)." }
+          }
+          if ($release.draft) {
+            $body = @{ draft = $false; prerelease = $true; make_latest = 'false' } | ConvertTo-Json
+            $published = Invoke-RestMethod -Method Patch -Uri $releaseUrl -Headers $headers -ContentType 'application/json' -Body $body
+            if ($published.draft -or -not $published.prerelease) { throw 'Publishing the verified draft failed.' }
+          }
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/v0.1.0"
+          "### Published [v0.1.0 Windows preview]($url) after verifying and retesting all three original assets." >> $env:GITHUB_STEP_SUMMARY

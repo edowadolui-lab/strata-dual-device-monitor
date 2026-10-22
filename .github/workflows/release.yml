@@ -77,16 +77,24 @@ jobs:
             Accept = 'application/vnd.github+json'
             'X-GitHub-Api-Version' = '2022-11-28'
           }
-          $releaseUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
-          $response = Invoke-WebRequest -Uri $releaseUrl -Headers $headers -SkipHttpErrorCheck
-          if ($response.StatusCode -eq 200) {
-            $existing = $response.Content | ConvertFrom-Json
+          # Draft releases need not have a tag ref yet; find them by release ID.
+          $matches = @()
+          $page = 1
+          do {
+            $pageUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases?per_page=100&page=$page"
+            $releases = Invoke-RestMethod -Uri $pageUrl -Headers $headers
+            $matches += @($releases | Where-Object { $_.tag_name -eq $tag })
+            $page++
+          } while ($releases.Count -eq 100)
+          if ($matches.Count -gt 1) { throw "More than one release matches $tag." }
+          if ($matches.Count -eq 1) {
+            $existing = $matches[0]
             if ($existing.draft) {
               throw "An unpublished $tag draft already exists. Inspect its assets before retrying; this workflow never overwrites a release."
             }
             "publish=false" >> $env:GITHUB_OUTPUT
             "### $tag is already published; assets were left unchanged." >> $env:GITHUB_STEP_SUMMARY
-          } elseif ($response.StatusCode -eq 404) {
+          } else {
             # An existing un-released tag must not silently select another commit.
             $tagUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag"
             $tagResponse = Invoke-WebRequest -Uri $tagUrl -Headers $headers -SkipHttpErrorCheck
@@ -94,8 +102,6 @@ jobs:
               throw "The tag check returned HTTP $($tagResponse.StatusCode). An existing tag must be reviewed before publishing $tag."
             }
             "publish=true" >> $env:GITHUB_OUTPUT
-          } else {
-            throw "Cannot check existing releases: HTTP $($response.StatusCode)."
           }
 
       - name: Build the Windows x64 installation ZIP
@@ -170,15 +176,34 @@ jobs:
           # Leave an upload failure private. Published releases are never replaced.
           & gh release create $tag @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Strata dual-device monitor $tag - Windows preview" --notes-file $notesFile --draft --prerelease --latest=false
           if ($LASTEXITCODE -ne 0) { throw 'Release draft creation or asset upload failed.' }
-          $json = & gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
-          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify the uploaded release assets.' }
-          $uploaded = ($json -join "`n") | ConvertFrom-Json
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $matches = @()
+          $page = 1
+          do {
+            $pageUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases?per_page=100&page=$page"
+            $releases = Invoke-RestMethod -Uri $pageUrl -Headers $headers
+            $matches += @($releases | Where-Object { $_.tag_name -eq $tag })
+            $page++
+          } while ($releases.Count -eq 100)
+          if ($matches.Count -ne 1) { throw 'Cannot identify exactly one uploaded draft release.' }
+          $releaseId = $matches[0].id
+          $releaseUrl = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/$releaseId"
+          $uploaded = Invoke-RestMethod -Uri $releaseUrl -Headers $headers
+          if (-not $uploaded.draft -or $uploaded.target_commitish -ne $env:GITHUB_SHA) {
+            throw 'The uploaded draft does not match this tested source commit.'
+          }
+          if (@($uploaded.assets).Count -ne $assets.Count) { throw 'Unexpected release asset count.' }
           foreach ($asset in $assets) {
             $local = Get-Item -LiteralPath $asset
             $match = @($uploaded.assets | Where-Object { $_.name -eq $local.Name -and $_.size -eq $local.Length -and $_.state -eq 'uploaded' })
             if ($match.Count -ne 1) { throw "Uploaded asset verification failed: $($local.Name)." }
           }
-          & gh release edit $tag --repo $env:GITHUB_REPOSITORY --draft=false --prerelease --latest=false
-          if ($LASTEXITCODE -ne 0) { throw 'Publishing the verified release failed.' }
+          $body = @{ draft = $false; prerelease = $true; make_latest = 'false' } | ConvertTo-Json
+          $published = Invoke-RestMethod -Method Patch -Uri $releaseUrl -Headers $headers -ContentType 'application/json' -Body $body
+          if ($published.draft -or -not $published.prerelease) { throw 'Publishing the verified release failed.' }
           $url = "https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$tag"
           "### Published [$tag Windows preview]($url)" >> $env:GITHUB_STEP_SUMMARY
